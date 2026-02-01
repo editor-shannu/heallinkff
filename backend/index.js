@@ -34,7 +34,7 @@ app.post("/sos", (req, res) => {
 
   console.log("SOS received:", latitude, longitude);
 
-  res.json({ success: true });
+  res.json({ success: true, sosId: newSOS.id });
 });
 
 // Send SOS list to dashboard
@@ -42,17 +42,35 @@ app.get("/alerts", (req, res) => {
   res.json(sosAlerts);
 });
 
-// Accept SOS
-app.post("/alerts/:id/accept", (req, res) => {
+// Get specific SOS status
+app.get("/alerts/:id", (req, res) => {
   const { id } = req.params;
+  const alert = sosAlerts.find((a) => a.id == id);
+  if (alert) {
+    res.json(alert);
+  } else {
+    res.status(404).json({ error: "Alert not found" });
+  }
+});
+
+// Accept SOS
+// Update SOS status
+app.post("/alerts/:id/status", (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
 
   sosAlerts = sosAlerts.map((alert) =>
-    alert.id == id ? { ...alert, status: "ACCEPTED" } : alert
+    alert.id == id ? { ...alert, status } : alert
   );
 
   res.json({ success: true });
 });
 
+// Get latest SOS (for user app)
+app.get("/latest", (req, res) => {
+  if (sosAlerts.length === 0) return res.json(null);
+  res.json(sosAlerts[0]);
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
